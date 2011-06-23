@@ -22,11 +22,11 @@ SYNOPSIS
                       prefix       => '/.shared.css',
                       content_type => 'text/css; charset=utf8',
                   }
-              ];
+              ],
               verifier => sub {
                   my ($version, $prefix) = @_;
                   $version =~ /v\d/
-              },
+              };
 
           $app;
       };

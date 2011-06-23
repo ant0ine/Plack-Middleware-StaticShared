@@ -18,6 +18,9 @@ sub new {
 	my $self = $class->SUPER::new(@args);
 }
 
+use constant EXPIRES => DateTime::Format::HTTP->format_datetime(DateTime->now->add(years => 10));
+use constant LAST_MODIFIED => DateTime::Format::HTTP->format_datetime(DateTime->from_epoch(epoch => 0));
+
 sub call {
 	my ($self, $env) = @_;
 	for my $static (@{ $self->binds }) {
@@ -53,14 +56,14 @@ sub call {
 			if ($@) {
 				$res->code(503);
 				$res->header('Retry-After' => 10);
-				$res->content($@);
+				$res->content($@); # it is not safe to expose the error
 			} else {
 				# Cache control:
 				# IE requires both Last-Modified and Etag to ignore checking updates.
 				$res->code(200);
 				$res->header("Cache-Control" => "public; max-age=315360000; s-maxage=315360000");
-				$res->header("Expires" => DateTime::Format::HTTP->format_datetime(DateTime->now->add(years => 10)));
-				$res->header("Last-Modified" => DateTime::Format::HTTP->format_datetime(DateTime->from_epoch(epoch => 0)));
+				$res->header("Expires" => EXPIRES());
+				$res->header("Last-Modified" => LAST_MODIFIED());
 				$res->header("ETag" => $etag);
 				$res->content_type($static->{content_type});
 				$res->content($content);
@@ -115,11 +118,11 @@ Plack::Middleware::StaticShared - concat some static files to one resource
                   prefix       => '/.shared.css',
                   content_type => 'text/css; charset=utf8',
               }
-          ];
+          ],
           verifier => sub {
               my ($version, $prefix) = @_;
               $version =~ /v\d/
-          },
+          };
 
       $app;
   };
